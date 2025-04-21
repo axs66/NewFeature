@@ -1,2 +1,0 @@
-@interface CMessageMgr : NSObject
-@end
