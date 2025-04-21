@@ -6,6 +6,7 @@ on:
       - '.github/workflows/build.yml'  # 监控 build.yml 文件的变化
       - 'Tweak.xm'  # 增加对 Tweak.xm 文件的监控
       - 'control' 
+      - 'Preferences/WeChatEnhancePrefs.plist'  # 监控 plist 文件的变化
 
 jobs:
   build:
@@ -29,6 +30,12 @@ jobs:
 
       - name: Prepare Theos
         uses: axs66/theos-action@main
+
+      # 添加复制 plist 文件的步骤
+      - name: Setup Resources Directory
+        run: |
+          mkdir -p WeChatEnhanceSettings/Resources
+          cp Preferences/WeChatEnhancePrefs.plist WeChatEnhanceSettings/Resources/
 
       - name: Build package
         run: |
