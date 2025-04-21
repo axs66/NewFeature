@@ -1,4 +1,5 @@
 #import "CSInputTextSettingsViewController.h"
+#import "CSSettingModels.h"
 #import <UIKit/UIKit.h>
 
 // UserDefaults Key常量
@@ -24,6 +25,17 @@ static CGFloat const kDefaultTextAlpha = 0.5f;
 static CGFloat const kDefaultCornerRadius = 18.0f;
 // 输入框边框默认值
 static CGFloat const kDefaultBorderWidth = 1.0f;
+
+@implementation CSSettingSection
+
++ (instancetype)sectionWithHeader:(NSString *)header items:(NSArray *)items {
+    CSSettingSection *section = [[self alloc] init];
+    section.header = header;
+    section.items = items;
+    return section;
+}
+
+@end
 
 @implementation CSInputTextSettingsViewController
 
