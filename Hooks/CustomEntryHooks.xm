@@ -1,90 +1,85 @@
 // CustomEntryHooks.xm
 // 微信自定义入口 Hook
+// 该文件负责在微信注册自定义插件入口
 
-#import "../Headers/WCHeaders.h"
-#import "../Headers/CSUserInfoHelper.h"
-#import "../Headers/WCPluginsHeader.h"
-#import "../Controllers/CSEntrySettingsViewController.h"
-
-// 入口设置相关的键
-static NSString * const kEntryDisplayModeKey = @"com.wechat.tweak.entry.display.mode";
-static NSString * const kEntryCustomTitleKey = @"com.wechat.tweak.entry.custom.title";
-static NSString * const kEntrySettingsChangedNotification = @"com.wechat.tweak.entry.settings.changed";
-
-// 定义入口标题变量
-static NSString *gCustomEntryTitle = nil;
+#import "../Headers/WCHeaders.h"      // 微信相关的所有类和框架
+#import "../Controllers/CSCustomViewController.h" // 自定义设置页面
 
 // 获取入口图标
 static inline UIImage * __nullable getCustomEntryIcon(void) {
+    // 使用系统图标并设置蓝色
     UIImage *icon = [UIImage systemImageNamed:@"signature.th"];
     return [icon imageWithTintColor:[UIColor systemBlueColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
 }
 
+// 获取显示模式设置
 static CSEntryDisplayMode getEntryDisplayMode() {
-    return (CSEntryDisplayMode)[[NSUserDefaults standardUserDefaults] integerForKey:kEntryDisplayModeKey];
-}
-
-static NSString *getCustomEntryTitle() {
-    if (!gCustomEntryTitle) {
-        NSString *savedTitle = [[NSUserDefaults standardUserDefaults] objectForKey:kEntryCustomTitleKey];
-        gCustomEntryTitle = savedTitle ?: @"Wechat";
-    }
-    return gCustomEntryTitle;
-}
-
-static void loadEntrySettings() {
-    gCustomEntryTitle = getCustomEntryTitle();
-    NSLog(@"[WeChatTweak] 入口设置已加载: 显示模式=%ld, 标题=%@", (long)getEntryDisplayMode(), gCustomEntryTitle);
-}
-
-static void entrySettingsChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo) {
-    loadEntrySettings();
+    return CSEntryDisplayModeMore; // 固定显示模式
 }
 
 %hook MoreViewController
 
+// 在"设置"页面添加功能入口
 - (void)addFunctionSection {
+    // 调用原始方法
     %orig;
-
-    if (getEntryDisplayMode() == CSEntryDisplayModePlugin) {
-        NSLog(@"[WeChatTweak] 根据设置跳过在设置页面添加入口");
+    
+    // 获取显示模式
+    CSEntryDisplayMode displayMode = getEntryDisplayMode();
+    
+    // 如果设置为只在插件入口显示，则不添加到设置页面
+    if (displayMode == CSEntryDisplayModePlugin) {
         return;
     }
-
-    NSString *entryTitle = getCustomEntryTitle();
+    
+    // 获取自定义标题
+    NSString *entryTitle = @"自定义插件入口"; // 固定标题
+    
+    // 获取tableViewMgr
     WCTableViewManager *tableViewMgr = MSHookIvar<id>(self, "m_tableViewMgr");
-    if (!tableViewMgr) return;
-
+    if (!tableViewMgr) { 
+        return; 
+    }
+    
+    // 获取第三个section（通常是功能区域）
     WCTableViewSectionManager *section = [tableViewMgr getSectionAt:2];
-    if (!section) return;
-
+    if (!section) { 
+        return; 
+    }
+    
+    // 创建自定义入口cell
     WCTableViewCellManager *customEntryCell = [%c(WCTableViewCellManager) normalCellForSel:@selector(onCustomEntryClick)
-                                                                                      target:self
-                                                                                   leftImage:getCustomEntryIcon()
-                                                                                      title:entryTitle
-                                                                                      badge:nil
-                                                                                 rightValue:nil
-                                                                                rightImage:nil
-                                                                           withRightRedDot:NO
-                                                                                  selected:NO];
+                                                                              target:self
+                                                                           leftImage:getCustomEntryIcon()
+                                                                              title:entryTitle
+                                                                              badge:nil
+                                                                         rightValue:nil
+                                                                        rightImage:nil
+                                                                   withRightRedDot:NO
+                                                                          selected:NO];
+    
+    // 添加cell到section
     [section addCell:customEntryCell];
-    NSLog(@"[WeChatTweak] 已在设置页面添加入口: %@", entryTitle);
 }
 
+// 处理入口点击事件
 %new
 - (void)onCustomEntryClick {
-    // 使用已有的 CSEntrySettingsViewController 替代未定义的 CSCustomViewController
-    CSEntrySettingsViewController *customVC = [[CSEntrySettingsViewController alloc] init];
-    customVC.title = getCustomEntryTitle();
-
+    // 创建并配置自定义控制器
+    CSCustomViewController *customVC = [[CSCustomViewController alloc] init];
+    customVC.title = @"自定义插件入口"; // 固定标题
+    
+    // 创建导航控制器（用于模态展示）
     UINavigationController *navVC = [[UINavigationController alloc] initWithRootViewController:customVC];
-
+    
+    // 设置模态展示样式（iOS 13+）
     if (@available(iOS 13.0, *)) {
-        navVC.modalPresentationStyle = UIModalPresentationFormSheet;
+        navVC.modalPresentationStyle = UIModalPresentationFormSheet; // 使用表单样式
     } else {
-        navVC.modalPresentationStyle = UIModalPresentationPageSheet;
+        navVC.modalPresentationStyle = UIModalPresentationPageSheet; // 向上滑动样式
     }
-
+    
+    // 模态展示控制器
     [self presentViewController:navVC animated:YES completion:nil];
 }
 
@@ -94,23 +89,24 @@ static void entrySettingsChangedCallback(CFNotificationCenterRef center, void *o
 
 static int isRegister = 0;
 
-- (void)viewDidLoad {
+-(void)viewDidLoad{
     %orig;
-
-    if (getEntryDisplayMode() == CSEntryDisplayModeMore) {
-        NSLog(@"[WeChatTweak] 根据设置跳过在插件入口添加入口");
+    
+    // 获取显示模式
+    CSEntryDisplayMode displayMode = getEntryDisplayMode();
+    
+    // 如果设置为只在设置页面显示，则不添加到插件入口
+    if (displayMode == CSEntryDisplayModeMore) {
         return;
     }
-
+    
     if (NSClassFromString(@"WCPluginsMgr") && isRegister == 0) {
         isRegister = 1;
-
-        NSString *title = getCustomEntryTitle();
-        NSString *version = kPluginVersionString;
-        NSString *controller = @"CSEntrySettingsViewController"; // 替代 CSCustomViewController
-
-        NSLog(@"[WeChatTweak] 尝试注册自定义入口: %@, 控制器: %@", title, controller);
-
+        
+        // 获取自定义标题
+        NSString *title = @"自定义插件入口"; // 固定标题
+        NSString *controller = @"CSCustomViewController";
+        
         @try {
             Class wcPluginsMgr = objc_getClass("WCPluginsMgr");
             if (wcPluginsMgr) {
@@ -118,31 +114,18 @@ static int isRegister = 0;
                 if (instance) {
                     SEL registerSel = @selector(registerControllerWithTitle:version:controller:);
                     if ([instance respondsToSelector:registerSel]) {
-                        [instance registerControllerWithTitle:title version:version controller:controller];
-                        NSLog(@"[WeChatTweak] 成功注册自定义入口: %@", title);
-                    } else {
-                        NSLog(@"[WeChatTweak] 注册失败: registerControllerWithTitle 方法不存在");
+                        [instance registerControllerWithTitle:title version:@"1.0" controller:controller];
                     }
-                } else {
-                    NSLog(@"[WeChatTweak] 注册失败: 无法获取 WCPluginsMgr 实例");
                 }
-            } else {
-                NSLog(@"[WeChatTweak] 注册失败: WCPluginsMgr 类不存在");
             }
         } @catch (NSException *exception) {
             NSLog(@"[WeChatTweak] 注册入口失败: %@", exception);
         }
     }
 }
-
 %end
 
 %ctor {
-    loadEntrySettings();
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
-                                    NULL,
-                                    entrySettingsChangedCallback,
-                                    CFSTR("com.wechat.tweak.entry.settings.changed"),
-                                    NULL,
-                                    CFNotificationSuspensionBehaviorDeliverImmediately);
+    // 加载设置
+    NSLog(@"[WeChatTweak] 入口设置已加载");
 }
