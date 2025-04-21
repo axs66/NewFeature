@@ -1,5 +1,7 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
+#import "WCPluginsHeader.h"
+#import "WeChatEnhanceMainController.h"
 
 // ============== 第一部分：声明原始函数指针 ==============
 static BOOL (*orig_shouldHideSelfAvatar)(void);
