@@ -1,59 +1,66 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import "WCPluginsHeader.h" 
+#import "WCPluginsHeader.h"
 #import "WeChatEnhanceMainController.h"
-
-// ✅ 你原始 Hook 内容：保留
-%hook WCPersonalInfoItemViewLogic
-
-- (BOOL)shouldHideSelfAvatar {
-    // 加入开关判断
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableAvatarEnhance"]) {
-        return NO;
-    }
-    return %orig;
-}
-
-%end
+#import "Headers/MMUINavigationController.h"
+#import "Headers/MMMessageCellView.h"
+#import "Headers/CMessageMgr.h"
+#import "Headers/WCPersonalInfoItemViewLogic.h"
 
 %hook MMUINavigationController
 
 - (void)viewDidLoad {
     %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableNavCustomization"]) {
+
+    // 设置导航栏颜色
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"EnableCustomUI"]) {
         self.navigationBar.tintColor = [UIColor redColor];
+        self.navigationBar.barTintColor = [UIColor blackColor];
+        self.navigationBar.titleTextAttributes = @{NSForegroundColorAttributeName : [UIColor whiteColor]};
     }
 }
 
 %end
 
-// ✅ 示例：时间显示功能
+
 %hook MMMessageCellView
 
 - (void)layoutSubviews {
     %orig;
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableTimeDisplay"]) {
-        // 比如增加时间标签、改变显示样式等
+
+    // 修改消息时间颜色
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"EnableCustomTimeColor"]) {
         self.timestampLabel.textColor = [UIColor orangeColor];
     }
 }
 
 %end
 
-// ✅ 示例：后台运行
-%hook CMessageMgr
 
-- (void)AppWillResignActive {
-    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"enableBackground"]) {
-        %orig;
+%hook WCPersonalInfoItemViewLogic
+
+- (void)onItemClicked:(id)arg1 {
+    %orig;
+
+    if ([self respondsToSelector:@selector(itemName)] && [[self performSelector:@selector(itemName)] isEqualToString:@"点歌封面"]) {
+        // 模拟打开你的点歌封面控制器
+        UIViewController *controller = [[NSClassFromString(@"SongCardEditViewController") alloc] init];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:controller];
+        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:nav animated:YES completion:nil];
     }
 }
 
 %end
 
-// ✅ 注册插件到收纳管理器
-__attribute__((constructor)) static void registerPlugin() {
-    [[WCPluginsMgr sharedInstance] registerControllerWithTitle:@"微信增强"
-                                                       version:@"2.0"
-                                                    controller:@"WeChatEnhanceMainController"];
+%ctor {
+    @autoreleasepool {
+        NSLog(@"[WeChatEnhance] 插件已启动");
+
+        // 默认注册设置值
+        NSDictionary *defaults = @{
+            @"EnableCustomUI": @YES,
+            @"EnableCustomTimeColor": @YES
+        };
+        [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
+    }
 }
