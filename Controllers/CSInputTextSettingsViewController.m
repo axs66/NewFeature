@@ -1,5 +1,5 @@
-#import "Controllers/CSInputTextSettingsViewController.h"
-#import "Controllers/CSSettingModels.h"
+#import "CSInputTextSettingsViewController.h"
+#import "CSSettingModels.h"
 #import <UIKit/UIKit.h>
 
 // UserDefaults Key常量
