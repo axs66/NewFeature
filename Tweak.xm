@@ -46,7 +46,18 @@
         // 模拟打开你的点歌封面控制器
         UIViewController *controller = [[NSClassFromString(@"SongCardEditViewController") alloc] init];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:controller];
-        [[UIApplication sharedApplication].keyWindow.rootViewController presentViewController:nav animated:YES completion:nil];
+        
+        // 使用新的方法获取 key window
+        UIWindow *window = nil;
+        for (UIWindow *w in UIApplication.sharedApplication.windows) {
+            if (w.isKeyWindow) {
+                window = w;
+                break;
+            }
+        }
+        if (window) {
+            [window.rootViewController presentViewController:nav animated:YES completion:nil];
+        }
     }
 }
 
