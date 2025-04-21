@@ -1,6 +1,6 @@
 Package: com.axs.wechat-enhance
 Name: WeChatEnhance
-Version: 1.0.0
+Version: 1.0.1
 Architecture: iphoneos-arm
 Description: Enhanced features for WeChat (anti-revoke, UI tweaks, etc.)
 Maintainer: Axs
