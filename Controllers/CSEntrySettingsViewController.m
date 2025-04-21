@@ -1,150 +1,73 @@
-#import "CSEntrySettingsViewController.h"
-#import <stdlib.h>
+#import "CSInputTextSettingsViewController.h"
 
-// 用户默认设置键
-static NSString * const kEntryDisplayModeKey = @"com.wechat.tweak.entry.display.mode";
-static NSString * const kEntrySettingsChangedNotification = @"com.wechat.tweak.entry.settings.changed";
+@interface CSInputTextSettingsViewController ()
 
-// 开关设置键
-static NSString * const kEntryShowInMoreKey = @"com.wechat.tweak.entry.show.in.more";
-static NSString * const kEntryShowInPluginKey = @"com.wechat.tweak.entry.show.in.plugin";
-
-@interface CSEntrySettingsViewController ()
-
-// 删除涉及到问题类的相关属性
+// 删除对 CSSettingSection, CSSettingItem, CSSettingTableViewCell 的所有引用
 
 @end
 
-@implementation CSEntrySettingsViewController
-
-#pragma mark - 生命周期
+@implementation CSInputTextSettingsViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    self.title = @"入口设置";
+    self.title = @"输入框设置";
     self.tableView.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     self.tableView.separatorInset = UIEdgeInsetsMake(0, 54, 0, 0);
 
-    [self loadCurrentSettings];
+    [self setupData];
 }
-
-#pragma mark - 设置加载和保存
-
-- (void)loadCurrentSettings {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    CSEntryDisplayMode displayMode = [defaults integerForKey:kEntryDisplayModeKey];
-
-    BOOL showInMore = NO;
-    BOOL showInPlugin = NO;
-
-    switch (displayMode) {
-        case CSEntryDisplayModeMore:
-            showInMore = YES;
-            break;
-        case CSEntryDisplayModePlugin:
-            showInPlugin = YES;
-            break;
-        case CSEntryDisplayModeBoth:
-            showInMore = YES;
-            showInPlugin = YES;
-            break;
-        default:
-            showInMore = YES;
-            break;
-    }
-
-    if (![defaults objectForKey:kEntryShowInMoreKey]) {
-        [defaults setBool:showInMore forKey:kEntryShowInMoreKey];
-    }
-
-    if (![defaults objectForKey:kEntryShowInPluginKey]) {
-        [defaults setBool:showInPlugin forKey:kEntryShowInPluginKey];
-    }
-}
-
-- (void)saveSettingsAndNotify {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-
-    BOOL showInMore = [defaults boolForKey:kEntryShowInMoreKey];
-    BOOL showInPlugin = [defaults boolForKey:kEntryShowInPluginKey];
-
-    CSEntryDisplayMode displayMode;
-    if (showInMore && showInPlugin) {
-        displayMode = CSEntryDisplayModeBoth;
-    } else if (showInMore) {
-        displayMode = CSEntryDisplayModeMore;
-    } else if (showInPlugin) {
-        displayMode = CSEntryDisplayModePlugin;
-    } else {
-        displayMode = CSEntryDisplayModeMore;
-        [defaults setBool:YES forKey:kEntryShowInMoreKey];
-    }
-
-    [defaults setInteger:displayMode forKey:kEntryDisplayModeKey];
-    [defaults synchronize];
-
-    [[NSNotificationCenter defaultCenter] postNotificationName:kEntrySettingsChangedNotification object:nil];
-}
-
-- (void)showRestartConfirmAlert {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示"
-                                                                   message:@"修改设置需要重启微信才能生效，是否立即重启？"
-                                                            preferredStyle:UIAlertControllerStyleAlert];
-
-    [alert addAction:[UIAlertAction actionWithTitle:@"稍后重启" style:UIAlertActionStyleCancel handler:nil]];
-    [alert addAction:[UIAlertAction actionWithTitle:@"立即重启" style:UIAlertActionStyleDestructive handler:^(UIAlertAction * _Nonnull action) {
-        exit(0);
-    }]];
-
-    [self presentViewController:alert animated:YES completion:nil];
-}
-
-#pragma mark - 数据设置
 
 - (void)setupData {
-    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    BOOL showInMore = [defaults boolForKey:kEntryShowInMoreKey];
-    BOOL showInPlugin = [defaults boolForKey:kEntryShowInPluginKey];
-
-    // 直接修改显示开关设置
-    [defaults setBool:showInMore forKey:kEntryShowInMoreKey];
-    [defaults setBool:showInPlugin forKey:kEntryShowInPluginKey];
+    // 直接用数组代替自定义项
+    NSArray *settingsItems = @[
+        @{@"title": @"显示占位文本", @"type": @"switch", @"value": @(YES)},
+        @{@"title": @"输入框圆角", @"type": @"switch", @"value": @(NO)},
+        @{@"title": @"输入框边框", @"type": @"switch", @"value": @(YES)}
+    ];
+    
+    // 设置 sectionsArray，直接使用 NSArray 替代
+    NSMutableArray *sectionsArray = [NSMutableArray array];
+    [sectionsArray addObject:settingsItems];
+    
+    // 直接把数组赋给表格的数据源
+    self.settingsData = sectionsArray;
 }
 
-#pragma mark - TableView
+#pragma mark - TableView 数据源方法
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1; // 单个部分
+    return self.settingsData.count;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 2; // 显示两个设置项
+    return [self.settingsData[section] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
+    static NSString *CellIdentifier = @"Cell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (!cell) {
-        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
     }
-    
-    if (indexPath.row == 0) {
-        cell.textLabel.text = @"显示在我页面";
-    } else {
-        cell.textLabel.text = @"显示在插件入口";
+
+    NSDictionary *item = self.settingsData[indexPath.section][indexPath.row];
+    cell.textLabel.text = item[@"title"];
+
+    if ([item[@"type"] isEqualToString:@"switch"]) {
+        UISwitch *toggle = [[UISwitch alloc] init];
+        toggle.on = [item[@"value"] boolValue];
+        [toggle addTarget:self action:@selector(toggleChanged:) forControlEvents:UIControlEventValueChanged];
+        cell.accessoryView = toggle;
     }
 
     return cell;
 }
 
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return @"显示设置";
-}
+#pragma mark - Switch 控制
 
-- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    return @"选择插件入口在微信中的显示位置，修改后需要重启微信才能生效";
+- (void)toggleChanged:(UISwitch *)sender {
+    // 处理开关的状态变化
 }
 
 @end
-
