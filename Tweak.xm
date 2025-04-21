@@ -1,6 +1,5 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-
 #import "WCPluginsHeader.h"
 #import "WeChatEnhanceMainController.h"
 #import "Headers/MMUINavigationController.h"
@@ -8,16 +7,15 @@
 #import "Headers/CMessageMgr.h"
 #import "Headers/WCPersonalInfoItemViewLogic.h"
 
-#pragma mark - 设置默认偏好值
-__attribute__((constructor)) static void registerDefaults() {
-    NSDictionary *defaults = @{
-        @"EnableCustomUI": @YES,
-        @"EnableCustomTimeColor": @YES,
-    };
-    [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
-}
+// ============== 原始函数指针声明 ==============
+static BOOL (*orig_shouldHideSelfAvatar)(void);
+static BOOL (*orig_shouldHideOtherAvatar)(void);
+static id (*orig_kNavigationShowAvatarKey)(void);
+static CGFloat (*orig_kDefaultAvatarSize)(void);
 
-#pragma mark - Hook 导航栏样式
+// ============== Objective-C 类 Hook ==============
+
+// 1. 导航栏 UI 自定义
 %hook MMUINavigationController
 
 - (void)viewDidLoad {
@@ -32,60 +30,70 @@ __attribute__((constructor)) static void registerDefaults() {
 
 %end
 
-#pragma mark - Hook 消息气泡时间颜色
+// 2. 消息时间颜色修改
 %hook MMMessageCellView
 
 - (void)layoutSubviews {
     %orig;
 
     if ([[NSUserDefaults standardUserDefaults] boolForKey:@"EnableCustomTimeColor"]) {
-        self.timestampLabel.textColor = [UIColor orangeColor];
-    }
-}
-
-%end
-
-#pragma mark - Hook “点歌封面”入口点击行为
-%hook WCPersonalInfoItemViewLogic
-
-- (void)onItemClicked:(id)arg1 {
-    %orig;
-
-    if ([self respondsToSelector:@selector(itemName)]) {
-        NSString *name = [self performSelector:@selector(itemName)];
-        if ([name isEqualToString:@"点歌封面"]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                Class vcClass = NSClassFromString(@"SongCardEditViewController");
-                if (vcClass) {
-                    UIViewController *controller = [[vcClass alloc] init];
-                    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:controller];
-                    UIWindow *keyWindow = [UIApplication sharedApplication].keyWindow;
-                    UIViewController *topVC = keyWindow.rootViewController;
-                    while (topVC.presentedViewController) {
-                        topVC = topVC.presentedViewController;
-                    }
-                    [topVC presentViewController:nav animated:YES completion:nil];
-                } else {
-                    NSLog(@"[WeChatEnhance] ❌ SongCardEditViewController class not found");
-                }
-            });
+        UILabel *label = [self valueForKey:@"m_timestampLabel"];
+        if ([label isKindOfClass:[UILabel class]]) {
+            label.textColor = [UIColor orangeColor];
         }
     }
 }
 
 %end
 
-#pragma mark - C 函数符号替换部分（头像强制显示）
-static BOOL (*orig_shouldHideSelfAvatar)(void) = NULL;
-static BOOL (*orig_shouldHideOtherAvatar)(void) = NULL;
-static id (*orig_kNavigationShowAvatarKey)(void) = NULL;
-static CGFloat (*orig_kDefaultAvatarSize)(void) = NULL;
+// 3. 插件入口点击处理
+%hook WCPersonalInfoItemViewLogic
 
+- (void)onItemClicked:(id)arg1 {
+    %orig;
+
+    if ([self respondsToSelector:@selector(itemName)] && [[self performSelector:@selector(itemName)] isEqualToString:@"点歌封面"]) {
+        UIViewController *controller = [[NSClassFromString(@"SongCardEditViewController") alloc] init];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:controller];
+
+        // 多 scene 安全获取 topVC
+        UIWindow *window = [UIApplication sharedApplication].windows.firstObject;
+        UIViewController *topVC = window.rootViewController;
+        while (topVC.presentedViewController) {
+            topVC = topVC.presentedViewController;
+        }
+
+        [topVC presentViewController:nav animated:YES completion:nil];
+    }
+}
+
+%end
+
+// 4. 调试辅助（可选）
+%hook CSAccountDetailViewController
+- (void)viewDidLoad {
+    %orig;
+    NSLog(@"WeChatEnhance: Hooked CSAccountDetailViewController");
+}
+%end
+
+%hook CSAvatarSettingsViewController
+- (void)viewDidLoad {
+    %orig;
+    NSLog(@"WeChatEnhance: Hooked CSAvatarSettingsViewController");
+}
+%end
+
+// ============== C 函数 Hook ==============
+
+// 自定义实现
 BOOL new_shouldHideSelfAvatar() {
+    NSLog(@"WeChatEnhance: Force show self avatar");
     return NO;
 }
 
 BOOL new_shouldHideOtherAvatar() {
+    NSLog(@"WeChatEnhance: Force show other avatar");
     return NO;
 }
 
@@ -97,31 +105,36 @@ CGFloat new_kDefaultAvatarSize() {
     return 50.0;
 }
 
-__attribute__((constructor)) static void hookAvatarFunctions() {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        NSLog(@"[WeChatEnhance] 🔍 Starting to hook avatar-related functions...");
+// 初始化原始符号地址
+__attribute__((constructor)) static void init() {
+    orig_shouldHideSelfAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z20shouldHideSelfAvatarv");
+    orig_shouldHideOtherAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z21shouldHideOtherAvatarv");
+    orig_kNavigationShowAvatarKey = (id(*)(void))MSFindSymbol(NULL, "_kNavigationShowAvatarKey");
+    orig_kDefaultAvatarSize = (CGFloat(*)(void))MSFindSymbol(NULL, "_kDefaultAvatarSize");
 
-        orig_shouldHideSelfAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z20shouldHideSelfAvatarv");
-        orig_shouldHideOtherAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z21shouldHideOtherAvatarv");
-        orig_kNavigationShowAvatarKey = (id(*)(void))MSFindSymbol(NULL, "_kNavigationShowAvatarKey");
-        orig_kDefaultAvatarSize = (CGFloat(*)(void))MSFindSymbol(NULL, "_kDefaultAvatarSize");
+    if (!orig_shouldHideSelfAvatar || !orig_shouldHideOtherAvatar ||
+        !orig_kNavigationShowAvatarKey || !orig_kDefaultAvatarSize) {
+        NSLog(@"[WeChatEnhance] Failed to find some symbols!");
+        return;
+    }
+}
 
-        if (orig_shouldHideSelfAvatar) {
-            MSHookFunction((void *)orig_shouldHideSelfAvatar, (void *)new_shouldHideSelfAvatar, NULL);
-        }
+// 注入函数替换
+__attribute__((constructor)) static void setupHooks() {
+    MSHookFunction((void *)orig_shouldHideSelfAvatar, (void *)new_shouldHideSelfAvatar, NULL);
+    MSHookFunction((void *)orig_shouldHideOtherAvatar, (void *)new_shouldHideOtherAvatar, NULL);
+    MSHookFunction((void *)orig_kNavigationShowAvatarKey, (void *)new_kNavigationShowAvatarKey, NULL);
+    MSHookFunction((void *)orig_kDefaultAvatarSize, (void *)new_kDefaultAvatarSize, NULL);
+}
 
-        if (orig_shouldHideOtherAvatar) {
-            MSHookFunction((void *)orig_shouldHideOtherAvatar, (void *)new_shouldHideOtherAvatar, NULL);
-        }
-
-        if (orig_kNavigationShowAvatarKey) {
-            MSHookFunction((void *)orig_kNavigationShowAvatarKey, (void *)new_kNavigationShowAvatarKey, NULL);
-        }
-
-        if (orig_kDefaultAvatarSize) {
-            MSHookFunction((void *)orig_kDefaultAvatarSize, (void *)new_kDefaultAvatarSize, NULL);
-        }
-
-        NSLog(@"[WeChatEnhance] ✅ Avatar hooks finished");
-    });
+// 默认设置注入
+%ctor {
+    @autoreleasepool {
+        NSLog(@"[WeChatEnhance] 插件已启动");
+        NSDictionary *defaults = @{
+            @"EnableCustomUI": @YES,
+            @"EnableCustomTimeColor": @YES
+        };
+        [[NSUserDefaults standardUserDefaults] registerDefaults:defaults];
+    }
 }
