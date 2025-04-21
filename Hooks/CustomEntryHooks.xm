@@ -2,8 +2,10 @@
 // 微信自定义入口 Hook
 // 该文件负责在微信注册自定义插件入口
 
-#import "../Headers/WCHeaders.h"      // 微信相关的所有类和框架
-#import "../Controllers/CSCustomViewController.h" // 自定义设置页面
+#import "../Headers/CSUserInfoHelper.h"      // 微信相关的所有类和框架
+#import "../Headers/WCHeaders.h"
+#import "../Headers/WCPluginsHeader.h"
+#import "../Controllers/CSEntrySettingsViewController.h" // 自定义设置页面
 
 // 获取入口图标
 static inline UIImage * __nullable getCustomEntryIcon(void) {
