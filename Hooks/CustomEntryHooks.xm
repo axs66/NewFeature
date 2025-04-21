@@ -5,7 +5,6 @@
 #import "../Headers/WCHeaders.h"      // 微信相关的所有类和框架
 #import "../Headers/CSUserInfoHelper.h" // 用户信息助手和全局常量
 #import "../Headers/WCPluginsHeader.h"  // 其他插件提供的接口声明
-#import "../Controllers/CSCustomViewController.h" // 自定义设置页面
 #import "../Controllers/CSEntrySettingsViewController.h" // 入口设置控制器
 
 // 入口设置相关的键
