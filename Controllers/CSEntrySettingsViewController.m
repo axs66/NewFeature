@@ -11,12 +11,7 @@ static NSString * const kEntryShowInPluginKey = @"com.wechat.tweak.entry.show.in
 
 @interface CSEntrySettingsViewController ()
 
-// 设置项和分区
-@property (nonatomic, strong) NSArray<CSSettingSection *> *sections;
-
-// 开关设置项
-@property (nonatomic, strong) CSSettingItem *showInMoreItem;
-@property (nonatomic, strong) CSSettingItem *showInPluginItem;
+// 删除涉及到问题类的相关属性
 
 @end
 
@@ -32,10 +27,7 @@ static NSString * const kEntryShowInPluginKey = @"com.wechat.tweak.entry.show.in
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     self.tableView.separatorInset = UIEdgeInsetsMake(0, 54, 0, 0);
 
-    [CSSettingTableViewCell registerToTableView:self.tableView];
-
     [self loadCurrentSettings];
-    [self setupData];
 }
 
 #pragma mark - 设置加载和保存
@@ -116,67 +108,43 @@ static NSString * const kEntryShowInPluginKey = @"com.wechat.tweak.entry.show.in
     BOOL showInMore = [defaults boolForKey:kEntryShowInMoreKey];
     BOOL showInPlugin = [defaults boolForKey:kEntryShowInPluginKey];
 
-    self.showInMoreItem = [CSSettingItem switchItemWithTitle:@"显示在我页面"
-                                                    iconName:@"person.fill"
-                                                   iconColor:[UIColor systemBlueColor]
-                                                 switchValue:showInMore
-                                           valueChangedBlock:^(BOOL isOn) {
-        [defaults setBool:isOn forKey:kEntryShowInMoreKey];
-        [self saveSettingsAndNotify];
-        [self showRestartConfirmAlert];
-    }];
-
-    self.showInPluginItem = [CSSettingItem switchItemWithTitle:@"显示在插件入口"
-                                                      iconName:@"apps.iphone"
-                                                     iconColor:[UIColor systemGreenColor]
-                                                   switchValue:showInPlugin
-                                             valueChangedBlock:^(BOOL isOn) {
-        [defaults setBool:isOn forKey:kEntryShowInPluginKey];
-        [self saveSettingsAndNotify];
-        [self showRestartConfirmAlert];
-    }];
-
-    CSSettingItem *aboutItem = [CSSettingItem itemWithTitle:@"说明"
-                                                  iconName:@"info.circle"
-                                                 iconColor:[UIColor systemGrayColor]
-                                                   detail:@"调整后需要重启微信"];
-
-    CSSettingSection *displaySection = [CSSettingSection sectionWithHeader:@"显示设置"
-                                                                      items:@[self.showInMoreItem,
-                                                                              self.showInPluginItem]];
-
-    CSSettingSection *aboutSection = [CSSettingSection sectionWithHeader:@"注意事项"
-                                                                   items:@[aboutItem]];
-
-    self.sections = @[displaySection, aboutSection];
+    // 直接修改显示开关设置
+    [defaults setBool:showInMore forKey:kEntryShowInMoreKey];
+    [defaults setBool:showInPlugin forKey:kEntryShowInPluginKey];
 }
 
 #pragma mark - TableView
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.sections.count;
+    return 1; // 单个部分
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.sections[section].items.count;
+    return 2; // 显示两个设置项
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    CSSettingTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:[CSSettingTableViewCell reuseIdentifier]];
-    CSSettingItem *item = self.sections[indexPath.section].items[indexPath.row];
-    [cell configureWithItem:item];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"Cell"];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"Cell"];
+    }
+    
+    if (indexPath.row == 0) {
+        cell.textLabel.text = @"显示在我页面";
+    } else {
+        cell.textLabel.text = @"显示在插件入口";
+    }
+
     return cell;
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
-    return self.sections[section].header;
+    return @"显示设置";
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section {
-    if (section == 0) {
-        return @"选择插件入口在微信中的显示位置，两个选项都可以开启，修改后需要重启微信才能生效";
-    }
-    return nil;
+    return @"选择插件入口在微信中的显示位置，修改后需要重启微信才能生效";
 }
 
 @end
+
