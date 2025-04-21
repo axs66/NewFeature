@@ -1,3 +1,7 @@
+#import "WeChatEnhanceMainController.h"
+
+@implementation WeChatEnhanceMainController
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"微信增强";
