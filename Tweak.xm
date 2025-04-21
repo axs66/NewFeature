@@ -2,7 +2,17 @@
 #import <Foundation/Foundation.h>
 
 // ======================
-// 1. 账户与用户信息相关
+// 1. 声明 C++ 函数原型（避免重复定义）
+// ======================
+extern "C" {
+    BOOL __Z20shouldHideSelfAvatarv(void);
+    BOOL __Z21shouldHideOtherAvatarv(void);
+    id _kNavigationShowAvatarKey(void);
+    CGFloat _kDefaultAvatarSize(void);
+}
+
+// ======================
+// 2. Objective-C 类 Hook
 // ======================
 %hook CSAccountDetailViewController
 - (void)viewDidLoad {
@@ -18,71 +28,28 @@
 }
 %end
 
-%hook CSUserInfoHelper
-- (id)getUserInfo:(id)user {
-    id result = %orig;
-    NSLog(@"WeChatEnhance: Hooked getUserInfo");
-    return result;
-}
-%end
-
 // ======================
-// 2. 聊天界面 & 消息增强
+// 3. C++ 函数 Hook（使用 %hookf）
 // ======================
-%hook CSChatAttachmentSettingsViewController
-- (void)viewDidLoad {
-    %orig;
-    NSLog(@"WeChatEnhance: Hooked ChatAttachmentSettings");
-}
-%end
-
-%hook CSMessageTimeSettingsViewController
-- (void)viewDidLoad {
-    %orig;
-    NSLog(@"WeChatEnhance: Hooked MessageTimeSettings");
-}
-%end
-
-// ======================
-// 3. 实用功能（防撤回、游戏作弊等）
-// ======================
-%hook CSGameCheatsViewController
-- (void)viewDidLoad {
-    %orig;
-    NSLog(@"WeChatEnhance: Hooked GameCheats");
-}
-%end
-
-// ======================
-// 4. 头像 & 导航栏控制
-// ======================
-%hook __Z20shouldHideSelfAvatarv
-BOOL __Z20shouldHideSelfAvatarv() {
+%hookf(BOOL, __Z20shouldHideSelfAvatarv) {
     BOOL orig = %orig;
-    NSLog(@"WeChatEnhance: Hooked shouldHideSelfAvatar (orig: %d)", orig);
+    NSLog(@"WeChatEnhance: Force show self avatar (orig: %d)", orig);
     return NO; // 强制显示头像
 }
-%end
 
-%hook __Z21shouldHideOtherAvatarv
-BOOL __Z21shouldHideOtherAvatarv() {
+%hookf(BOOL, __Z21shouldHideOtherAvatarv) {
     BOOL orig = %orig;
-    NSLog(@"WeChatEnhance: Hooked shouldHideOtherAvatar (orig: %d)", orig);
+    NSLog(@"WeChatEnhance: Force show other avatar (orig: %d)", orig);
     return NO; // 强制显示头像
 }
-%end
 
 // ======================
-// 5. 配置键（用于存储设置）
+// 4. 全局变量 Hook（使用 %hookf）
 // ======================
-%hook _kNavigationShowAvatarKey
-id _kNavigationShowAvatarKey() {
+%hookf(id, _kNavigationShowAvatarKey) {
     return @"WeChatEnhance_ShowAvatar"; // 修改默认值
 }
-%end
 
-%hook _kDefaultAvatarSize
-CGFloat _kDefaultAvatarSize() {
+%hookf(CGFloat, _kDefaultAvatarSize) {
     return 50.0; // 修改默认头像大小
 }
-%end
