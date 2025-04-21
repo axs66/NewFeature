@@ -8,5 +8,6 @@ TWEAK_NAME = WeChatEnhance
 WeChatEnhance_FILES = Tweak.xm
 WeChatEnhance_CFLAGS = -fobjc-arc
 WeChatEnhance_FRAMEWORKS = UIKit Foundation
+WeChatEnhance_LDFLAGS = -Wl,-undefined,dynamic_lookup
 
 include $(THEOS_MAKE_PATH)/tweak.mk
