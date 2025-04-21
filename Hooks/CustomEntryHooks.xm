@@ -1,4 +1,4 @@
-// CustomEntryHooks.xm
+// CustomEntryHooks.xm 
 // 微信自定义入口 Hook
 // 该文件负责在微信注册自定义插件入口
 
@@ -67,22 +67,9 @@ static CSEntryDisplayMode getEntryDisplayMode() {
 // 处理入口点击事件
 %new
 - (void)onCustomEntryClick {
-    // 创建并配置自定义控制器
-    CSCustomViewController *customVC = [[CSCustomViewController alloc] init];
-    customVC.title = @"自定义插件入口"; // 固定标题
-    
-    // 创建导航控制器（用于模态展示）
-    UINavigationController *navVC = [[UINavigationController alloc] initWithRootViewController:customVC];
-    
-    // 设置模态展示样式（iOS 13+）
-    if (@available(iOS 13.0, *)) {
-        navVC.modalPresentationStyle = UIModalPresentationFormSheet; // 使用表单样式
-    } else {
-        navVC.modalPresentationStyle = UIModalPresentationPageSheet; // 向上滑动样式
-    }
-    
-    // 模态展示控制器
-    [self presentViewController:navVC animated:YES completion:nil];
+    // 此处去掉了 CSCustomViewController 的实现
+    // 你可以直接跳转到一个系统视图或执行其他操作
+    NSLog(@"自定义插件入口点击");
 }
 
 %end
@@ -107,7 +94,7 @@ static int isRegister = 0;
         
         // 获取自定义标题
         NSString *title = @"自定义插件入口"; // 固定标题
-        NSString *controller = @"CSCustomViewController";
+        NSString *controller = @"CSCustomViewController";  // 你可以改为其他控制器或去掉
         
         @try {
             Class wcPluginsMgr = objc_getClass("WCPluginsMgr");
