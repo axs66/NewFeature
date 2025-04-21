@@ -1,19 +1,13 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 
-// ======================
-// 1. 声明 C++ 函数原型（避免重复定义）
-// ======================
-extern "C" {
-    BOOL __Z20shouldHideSelfAvatarv(void);
-    BOOL __Z21shouldHideOtherAvatarv(void);
-    id _kNavigationShowAvatarKey(void);
-    CGFloat _kDefaultAvatarSize(void);
-}
+// ============== 第一部分：声明原始函数指针 ==============
+static BOOL (*orig_shouldHideSelfAvatar)(void);
+static BOOL (*orig_shouldHideOtherAvatar)(void);
+static id (*orig_kNavigationShowAvatarKey)(void);
+static CGFloat (*orig_kDefaultAvatarSize)(void);
 
-// ======================
-// 2. Objective-C 类 Hook
-// ======================
+// ============== 第二部分：Objective-C 类 Hook ==============
 %hook CSAccountDetailViewController
 - (void)viewDidLoad {
     %orig;
@@ -28,28 +22,45 @@ extern "C" {
 }
 %end
 
-// ======================
-// 3. C++ 函数 Hook（使用 %hookf）
-// ======================
-%hookf(BOOL, __Z20shouldHideSelfAvatarv) {
-    BOOL orig = %orig;
-    NSLog(@"WeChatEnhance: Force show self avatar (orig: %d)", orig);
+// ============== 第三部分：C 函数 Hook 实现 ==============
+__attribute__((constructor)) static void init() {
+    // 1. 获取原始函数地址
+    orig_shouldHideSelfAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z20shouldHideSelfAvatarv");
+    orig_shouldHideOtherAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z21shouldHideOtherAvatarv");
+    orig_kNavigationShowAvatarKey = (id(*)(void))MSFindSymbol(NULL, "_kNavigationShowAvatarKey");
+    orig_kDefaultAvatarSize = (CGFloat(*)(void))MSFindSymbol(NULL, "_kDefaultAvatarSize");
+    
+    // 2. 检查是否找到所有符号
+    if (!orig_shouldHideSelfAvatar || !orig_shouldHideOtherAvatar || 
+        !orig_kNavigationShowAvatarKey || !orig_kDefaultAvatarSize) {
+        NSLog(@"WeChatEnhance: Failed to find required symbols!");
+        return;
+    }
+}
+
+// 3. 实现Hook函数
+BOOL new_shouldHideSelfAvatar() {
+    NSLog(@"WeChatEnhance: Force show self avatar");
     return NO; // 强制显示头像
 }
 
-%hookf(BOOL, __Z21shouldHideOtherAvatarv) {
-    BOOL orig = %orig;
-    NSLog(@"WeChatEnhance: Force show other avatar (orig: %d)", orig);
+BOOL new_shouldHideOtherAvatar() {
+    NSLog(@"WeChatEnhance: Force show other avatar");
     return NO; // 强制显示头像
 }
 
-// ======================
-// 4. 全局变量 Hook（使用 %hookf）
-// ======================
-%hookf(id, _kNavigationShowAvatarKey) {
-    return @"WeChatEnhance_ShowAvatar"; // 修改默认值
+id new_kNavigationShowAvatarKey() {
+    return @"WeChatEnhance_ShowAvatar";
 }
 
-%hookf(CGFloat, _kDefaultAvatarSize) {
-    return 50.0; // 修改默认头像大小
+CGFloat new_kDefaultAvatarSize() {
+    return 50.0;
+}
+
+// 4. 使用 MSHookFunction 进行替换
+__attribute__((constructor)) static void setupHooks() {
+    MSHookFunction((void *)orig_shouldHideSelfAvatar, (void *)new_shouldHideSelfAvatar, NULL);
+    MSHookFunction((void *)orig_shouldHideOtherAvatar, (void *)new_shouldHideOtherAvatar, NULL);
+    MSHookFunction((void *)orig_kNavigationShowAvatarKey, (void *)new_kNavigationShowAvatarKey, NULL);
+    MSHookFunction((void *)orig_kDefaultAvatarSize, (void *)new_kDefaultAvatarSize, NULL);
 }
