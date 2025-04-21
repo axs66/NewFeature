@@ -1,68 +1,59 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import "WCPluginsHeader.h"
+#import "WCPluginsHeader.h" 
 #import "WeChatEnhanceMainController.h"
 
-// ============== 第一部分：声明原始函数指针 ==============
-static BOOL (*orig_shouldHideSelfAvatar)(void);
-static BOOL (*orig_shouldHideOtherAvatar)(void);
-static id (*orig_kNavigationShowAvatarKey)(void);
-static CGFloat (*orig_kDefaultAvatarSize)(void);
+// ✅ 你原始 Hook 内容：保留
+%hook WCPersonalInfoItemViewLogic
 
-// ============== 第二部分：Objective-C 类 Hook ==============
-%hook CSAccountDetailViewController
-- (void)viewDidLoad {
-    %orig;
-    NSLog(@"WeChatEnhance: Hooked CSAccountDetailViewController");
+- (BOOL)shouldHideSelfAvatar {
+    // 加入开关判断
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableAvatarEnhance"]) {
+        return NO;
+    }
+    return %orig;
 }
+
 %end
 
-%hook CSAvatarSettingsViewController
+%hook MMUINavigationController
+
 - (void)viewDidLoad {
     %orig;
-    NSLog(@"WeChatEnhance: Hooked CSAvatarSettingsViewController");
-}
-%end
-
-// ============== 第三部分：C 函数 Hook 实现 ==============
-__attribute__((constructor)) static void init() {
-    // 1. 获取原始函数地址
-    orig_shouldHideSelfAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z20shouldHideSelfAvatarv");
-    orig_shouldHideOtherAvatar = (BOOL(*)(void))MSFindSymbol(NULL, "__Z21shouldHideOtherAvatarv");
-    orig_kNavigationShowAvatarKey = (id(*)(void))MSFindSymbol(NULL, "_kNavigationShowAvatarKey");
-    orig_kDefaultAvatarSize = (CGFloat(*)(void))MSFindSymbol(NULL, "_kDefaultAvatarSize");
-    
-    // 2. 检查是否找到所有符号
-    if (!orig_shouldHideSelfAvatar || !orig_shouldHideOtherAvatar || 
-        !orig_kNavigationShowAvatarKey || !orig_kDefaultAvatarSize) {
-        NSLog(@"WeChatEnhance: Failed to find required symbols!");
-        return;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableNavCustomization"]) {
+        self.navigationBar.tintColor = [UIColor redColor];
     }
 }
 
-// 3. 实现Hook函数
-BOOL new_shouldHideSelfAvatar() {
-    NSLog(@"WeChatEnhance: Force show self avatar");
-    return NO; // 强制显示头像
+%end
+
+// ✅ 示例：时间显示功能
+%hook MMMessageCellView
+
+- (void)layoutSubviews {
+    %orig;
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:@"enableTimeDisplay"]) {
+        // 比如增加时间标签、改变显示样式等
+        self.timestampLabel.textColor = [UIColor orangeColor];
+    }
 }
 
-BOOL new_shouldHideOtherAvatar() {
-    NSLog(@"WeChatEnhance: Force show other avatar");
-    return NO; // 强制显示头像
+%end
+
+// ✅ 示例：后台运行
+%hook CMessageMgr
+
+- (void)AppWillResignActive {
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:@"enableBackground"]) {
+        %orig;
+    }
 }
 
-id new_kNavigationShowAvatarKey() {
-    return @"WeChatEnhance_ShowAvatar";
-}
+%end
 
-CGFloat new_kDefaultAvatarSize() {
-    return 50.0;
-}
-
-// 4. 使用 MSHookFunction 进行替换
-__attribute__((constructor)) static void setupHooks() {
-    MSHookFunction((void *)orig_shouldHideSelfAvatar, (void *)new_shouldHideSelfAvatar, NULL);
-    MSHookFunction((void *)orig_shouldHideOtherAvatar, (void *)new_shouldHideOtherAvatar, NULL);
-    MSHookFunction((void *)orig_kNavigationShowAvatarKey, (void *)new_kNavigationShowAvatarKey, NULL);
-    MSHookFunction((void *)orig_kDefaultAvatarSize, (void *)new_kDefaultAvatarSize, NULL);
+// ✅ 注册插件到收纳管理器
+__attribute__((constructor)) static void registerPlugin() {
+    [[WCPluginsMgr sharedInstance] registerControllerWithTitle:@"微信增强"
+                                                       version:@"2.0"
+                                                    controller:@"WeChatEnhanceMainController"];
 }
