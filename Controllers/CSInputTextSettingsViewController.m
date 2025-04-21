@@ -22,6 +22,7 @@ static CGFloat const kDefaultTextAlpha = 0.5f;
 static CGFloat const kDefaultCornerRadius = 18.0f;
 static CGFloat const kDefaultBorderWidth = 1.0f;
 
+#pragma mark - CSSettingSection 实现
 @implementation CSSettingSection
 
 + (instancetype)sectionWithHeader:(NSString *)header items:(NSArray *)items {
@@ -33,29 +34,49 @@ static CGFloat const kDefaultBorderWidth = 1.0f;
 
 @end
 
+#pragma mark - CSInputTextSettingsViewController 实现
 @implementation CSInputTextSettingsViewController {
     NSArray<CSSettingSection *> *_sections;
     NSArray<CSSettingSection *> *_settingsData;
 }
 
-#pragma mark - Life Cycle
+#pragma mark - 生命周期方法
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    // 配置视图
     self.title = @"文本占位";
     self.tableView.backgroundColor = [UIColor systemGroupedBackgroundColor];
     self.tableView.separatorStyle = UITableViewCellSeparatorStyleSingleLine;
     self.tableView.separatorInset = UIEdgeInsetsMake(0, 54, 0, 0);
     
+    // 注册单元格
     [CSSettingTableViewCell registerToTableView:self.tableView];
+    
+    // 初始化数据
     [self loadSavedColors];
     [self setupData];
 }
 
-#pragma mark - Data Management
+#pragma mark - 数据管理
 - (void)setupData {
-    // ... 原有代码 ...
+    NSMutableArray *sectionsArray = [NSMutableArray array];
     
+    // 示例配置项（根据实际需求补充完整）
+    CSSettingSection *basicSection = [CSSettingSection sectionWithHeader:@"基本设置" items:@[
+        [[CSSwitchSettingItem alloc] initWithTitle:@"启用文本占位" userDefaultsKey:kInputTextEnabledKey]
+    ]];
+    
+    CSSettingSection *appearanceSection = [CSSettingSection sectionWithHeader:@"显示设置" items:@[
+        [[CSTextInputSettingItem alloc] initWithTitle:@"占位文字" defaultValue:kDefaultInputText userDefaultsKey:kInputTextContentKey],
+        [[CSColorPickerSettingItem alloc] initWithTitle:@"文字颜色" userDefaultsKey:kInputTextColorKey],
+        [[CSSliderSettingItem alloc] initWithTitle:@"透明度" defaultValue:kDefaultTextAlpha userDefaultsKey:kInputTextAlphaKey]
+    ]];
+    
+    [sectionsArray addObject:basicSection];
+    [sectionsArray addObject:appearanceSection];
+    
+    // 设置最终的sections数组
     self.sections = sectionsArray;
     self.settingsData = sectionsArray; // 保持双向同步
 }
@@ -77,28 +98,37 @@ static CGFloat const kDefaultBorderWidth = 1.0f;
         self.textColor = [UIColor colorWithWhite:0.5 alpha:kDefaultTextAlpha];
     }
     
-    // 加载边框颜色
+    // 加载边框颜色（示例代码）
     NSData *borderColorData = [defaults objectForKey:kInputTextBorderColorKey];
-    // ... 类似处理边框颜色 ...
+    if (borderColorData) {
+        self.borderColor = [NSKeyedUnarchiver unarchivedObjectOfClass:[UIColor class] fromData:borderColorData error:&error];
+        if (error || !self.borderColor) {
+            NSLog(@"解档边框颜色时出错: %@", error);
+            self.borderColor = [UIColor clearColor];
+            error = nil;
+        }
+    } else {
+        self.borderColor = [UIColor clearColor];
+    }
 }
 
-#pragma mark - Property Accessors
+#pragma mark - 属性存取器
 - (NSArray<CSSettingSection *> *)sections {
     return _sections;
 }
 
 - (void)setSections:(NSArray<CSSettingSection *> *)sections {
-    _sections = sections;
-    _settingsData = sections;
+    _sections = [sections copy];
+    _settingsData = [_sections copy];
 }
 
 - (NSArray<CSSettingSection *> *)settingsData {
     return _settingsData;
 }
 
-- (void)setSettingsData:(NSArray<CSSettingSection *> *)settingsData {
-    _settingsData = settingsData;
-    _sections = settingsData;
+- (void)setSettingsData:(NSArray<CSSetingSection *> *)settingsData {
+    _settingsData = [settingsData copy];
+    _sections = [_settingsData copy];
 }
 
 @end
