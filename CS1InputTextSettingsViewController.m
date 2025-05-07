@@ -31,7 +31,7 @@ static CGFloat const kDefaultBorderWidth = 1.0f;
     [super viewDidLoad];
     
     // 设置导航标题
-    self.title = @"文本占位";
+    self.title = @"输入框自定义";
     
     // 设置UI样式
     self.tableView.backgroundColor = [UIColor systemGroupedBackgroundColor];
