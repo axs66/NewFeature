@@ -6,7 +6,7 @@
 #import <Foundation/Foundation.h>
 #import "WCPluginsHeader.h"
 
-static NSString *wbzybt = @"文本占用";
+static NSString *wbzybt = @"输入框•W先生";
 static NSString *wbzybb = @"1.0";
 
 // UserDefaults Key常量
