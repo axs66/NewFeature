@@ -4,7 +4,10 @@
             WeChat
         );
         Bundles = (
-            "com.tencent.xin"
+            "com.tencent.xin",
+            "com.tencent.qy.xin",
+            "com.tencent.mm.xin",
+            "com.tencent.wx"
         );
     };
 } 
