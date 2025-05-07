@@ -3,8 +3,8 @@ Name: WeChatInputBox
 Version: 1.0
 Architecture: iphoneos-arm
 Description: 一个功能简单的微信插件，提供修改输入框粗细和颜色功能。
-Section: 微信插件
-Maintainer: Axs
+Section: Tweaks
+Maintainer: Axs <axs@example.com>
 Author: Axs
 Depends: mobilesubstrate (>= 0.9.5000)
 Installed-Size: 96
