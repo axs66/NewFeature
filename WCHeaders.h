@@ -1,102 +1,187 @@
-#!/bin/bash
+/**
+ * 微信相关头文件声明
+ * 包含微信基础框架、UI组件和控制器的声明
+ */
 
-# 颜色定义
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-NC='\033[0m' # 无颜色
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
-# 获取脚本所在的绝对路径目录
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+NS_ASSUME_NONNULL_BEGIN
 
-# 设备信息
-DEVICE_IP="192.168.31.23"
-DEVICE_PORT="22"
-SSH_OPTIONS="-o StrictHostKeyChecking=no -o ConnectTimeout=5"
+/// 设备信息类
+@interface DeviceInfo : NSObject
++ (BOOL)isiPad;
++ (BOOL)isiPadOrVision;
+@end
 
-# 输出带颜色的信息
-print_info() {
-    echo -e "${GREEN}==>${NC} $1"
-}
+/// 矩阵设备信息类
+@interface MatrixDeviceInfo : NSObject
++ (BOOL)isiPad;
+@end
 
-print_warning() {
-    echo -e "${YELLOW}==>${NC} $1"
-}
+/// 设备工具类
+@interface TPDeviceUtil : NSObject
++ (BOOL)isPadModel;
++ (BOOL)isPadInterface;
++ (long long)deviceType;
+@end
 
-print_error() {
-    echo -e "${RED}==>${NC} $1"
-}
+/// iOS系统信息类
+@interface TPIOSSystemInfo : NSObject
++ (BOOL)isPadModel;
++ (BOOL)isPadInterface;
+@end
 
-# 查找最新编译的deb包
-find_latest_deb() {
-    # 使用脚本目录的绝对路径来查找deb包
-    latest_deb=$(ls -t "${SCRIPT_DIR}/packages/"*.deb 2>/dev/null | head -1)
-    if [ -z "$latest_deb" ]; then
-        print_error "未找到deb包，请先运行 'make package SCHEME=rootless' 编译项目"
-        exit 1
-    fi
-    print_info "找到deb包: $latest_deb"
-    PACKAGE_NAME=$(basename "$latest_deb" | cut -d'_' -f1)
-}
+/// 平台工具实现类
+@interface MMIPlatformUtilImpl : NSObject
+- (BOOL)isPad;
+@end
 
-# 等待设备连接
-wait_for_device() {
-    print_info "正在等待设备连接，请确保设备已开启并连接到网络..."
-    
-    while true; do
-        if ssh $SSH_OPTIONS -p $DEVICE_PORT root@$DEVICE_IP "echo 连接成功" >/dev/null 2>&1; then
-            print_info "设备连接成功"
-            return 0
-        else
-            print_warning "正在尝试连接设备 (IP: $DEVICE_IP)..."
-            sleep 3
-        fi
-    done
-}
+#pragma mark - 基础框架扩展
 
-# 上传并安装
-upload_and_install() {
-    # 上传文件
-    while true; do
-        print_info "正在上传deb包到设备..."
-        if scp $SSH_OPTIONS -P $DEVICE_PORT "$latest_deb" root@$DEVICE_IP:/var/root/$PACKAGE_NAME.deb >/dev/null 2>&1; then
-            print_info "上传成功"
-            break
-        else
-            print_warning "上传失败，正在重试..."
-            sleep 2
-        fi
-    done
-    
-    # 安装包
-    while true; do
-        print_info "正在安装deb包..."
-        if ssh $SSH_OPTIONS -p $DEVICE_PORT root@$DEVICE_IP "dpkg -i --force-overwrite /var/root/$PACKAGE_NAME.deb && rm -f /var/root/$PACKAGE_NAME.deb" >/dev/null 2>&1; then
-            print_info "安装成功"
-            return 0
-        else
-            print_warning "安装失败，正在重试..."
-            sleep 2
-        fi
-    done
-}
+/// 导航控制器扩展
+@interface UIViewController (Navigation)
+@property(nonatomic, readonly, strong) UINavigationController *navigationController;
+@end
 
-# 主函数
-main() {
-    print_info "开始安装流程..."
-    print_info "脚本路径: ${SCRIPT_DIR}"
-    
-    # 查找最新的deb包
-    find_latest_deb
-    
-    # 等待设备连接
-    wait_for_device
-    
-    # 上传并安装
-    upload_and_install
-    
-    print_info "安装完成！请重启微信应用！"
-}
+#pragma mark - 表格视图组件
 
-# 执行主函数
-main 
+/// 表格分组管理器
+@interface WCTableViewSectionManager : NSObject
+- (void)addCell:(id)cell;
+@end
+
+/// 表格单元格管理器
+@interface WCTableViewCellManager : NSObject
+/// 创建标准样式的单元格
++ (id)normalCellForSel:(SEL)sel
+               target:(id)target
+            leftImage:(nullable id)image
+               title:(id)title
+               badge:(nullable id)badge
+          rightValue:(nullable id)value
+          rightImage:(nullable id)rightImage
+     withRightRedDot:(_Bool)redDot
+            selected:(_Bool)selected;
+@end
+
+/// 表格视图管理器
+@interface WCTableViewManager : NSObject
+- (id)getSectionAt:(unsigned int)index;
+@end
+
+#pragma mark - 头像相关
+
+/// 长按图片视图
+@interface MMUILongPressImageView : UIImageView
+@end
+
+/// 微信头像视图
+@interface MMHeadImageView : UIView
+@property (nonatomic, strong) MMUILongPressImageView *headImageView;
+- (instancetype)initWithUsrName:(id)userName headImgUrl:(id)imgUrl bAutoUpdate:(_Bool)autoUpdate bRoundCorner:(_Bool)roundCorner;
+@end
+
+#pragma mark - 视图控制器
+
+/// 更多页面控制器
+@interface MoreViewController : UIViewController
+- (void)addFunctionSection;
+@end
+
+#pragma mark - 用户信息相关
+
+/// 登陆账号信息获取（自己）
+@interface CContact : NSObject
+@property (nonatomic, copy) NSString *m_nsUsrName;    // 用户ID
+@property (nonatomic, copy) NSString *m_nsNickName;   // 昵称
+@property (nonatomic, copy) NSString *m_nsAliasName;  // 微信号
+@property (nonatomic, copy) NSString *m_nsHeadImgUrl; // 头像URL
+@end
+
+/// 联系人管理器
+@interface CContactMgr : NSObject
+- (CContact *)getSelfContact;
+- (CContact *)getContactForSearchByName:(NSString *)userName;
+@end
+
+/// 微信全局上下文管理器
+/// 用于管理和获取当前登录用户的基本信息
+/// 这个类在微信启动时就会初始化，可以在任何地方获取当前用户信息
+@interface MMContext : NSObject
+
+/// 获取当前登录用户的微信ID
+/// @return 当前用户的微信ID，如果未登录则返回nil
++ (id)currentUserName;
+
+@end
+
+#pragma mark - 聊天相关
+
+/// 聊天内容视图控制器
+@interface BaseMsgContentViewController : UIViewController
+/// 获取当前聊天对象
+- (CContact *)GetContact;
+@end
+
+/// 聊天消息视图模型
+@interface CommonMessageViewModel : NSObject
+/// 是否显示头像
+- (BOOL)isShowHeadImage;
+/// 是否为发送者
+- (BOOL)isSender;
+@end
+
+#pragma mark - 消息管理相关
+
+/// 消息服务中心
+@interface MMServiceCenter : NSObject
++ (instancetype)defaultCenter;
+- (id)getService:(Class)serviceClass;
+@end
+
+/// 消息内容对象
+@interface CMessageWrap : NSObject
+@property (nonatomic, copy) NSString *m_nsContent;    // 消息内容
+@property (nonatomic, copy) NSString *m_nsToUsr;      // 接收人
+@property (nonatomic, copy) NSString *m_nsFromUsr;    // 发送人
+@property (nonatomic, assign) unsigned int m_uiStatus; // 消息状态
+@property (nonatomic, assign) unsigned int m_uiCreateTime; // 创建时间
+@property (nonatomic, assign) unsigned int m_uiMessageType; // 消息类型
+@property (nonatomic, assign) unsigned int m_uiGameType;   // 游戏类型：1-猜拳，2-骰子
+@property (nonatomic, assign) unsigned int m_uiGameContent; // 游戏内容：猜拳1-剪刀，2-石头，3-布；骰子1-6对应点数
+@property (nonatomic, copy) NSString *m_nsEmoticonMD5;   // 表情MD5标识
+
+// 设置游戏相关的方法
+- (void)setM_uiGameContent:(unsigned int)gameContent;
+- (void)setM_nsEmoticonMD5:(NSString *)md5;
+
++ (instancetype)createWithRevokeMsgXml:(NSString *)xml;
+@end
+
+/// 消息管理器
+@interface CMessageMgr : NSObject
+- (BOOL)onRevokeMsg:(CMessageWrap *)msgWrap;
+- (void)AddLocalMsg:(NSString *)userName MsgWrap:(CMessageWrap *)wrap Time:(unsigned int)time;
+- (id)getMessageFromLocalID:(NSString *)fromUser localId:(NSString *)localId;
+@end
+
+#pragma mark - 游戏相关
+
+/// 游戏控制器类
+@interface GameController : NSObject
+/// 根据游戏内容获取对应的MD5标识
++ (NSString *)getMD5ByGameContent:(unsigned int)gameContent;
+@end
+
+#pragma mark - 登录界面相关
+@interface WCAccountLoginFirstViewController : UIViewController
+@property (nonatomic, strong) UIButton *deviceModeButton;
+@end
+
+// iPad登录页面控制器
+@interface WCAccountBackDeviceFirstViewController : UIViewController
+@property (nonatomic, strong) UIButton *deviceModeButton;
+@end
+
+NS_ASSUME_NONNULL_END 
