@@ -1,6 +1,6 @@
-# 微信插件 (WeChatEnhance)
+# 微信插件 (输入框自定义)
 
-一个功能丰富的微信增强插件，提供多种界面优化和功能增强选项。
+一个功能很简单的微信插件，提供修改输入框的粗细、颜色等。
 
 ## 系统要求
 - iOS 15.0 或更高版本
@@ -19,7 +19,3 @@
 ## 致谢
 
 感谢所有贡献者对项目的支持！ 
-
-## 备注
-Controllers/CSCustomViewController.m  第125行修改TG导航链接
-Headers/CSUserInfoHelper.h   第15行修改版本号
