@@ -1,9 +1,12 @@
-Package: com.hl.wenbenzhanyong
-Name: 文本占用
+Package: com.axs.wechatinputbox
+Name：微信输入框自定义
 Description: 文本占用设置
 Section: 微信插件
-Maintainer: 文本占用
-Author: 文本占用
+Maintainer: Axs
+Author: A
 Depends: mobilesubstrate (>= 0.9.5000)
 Version: 1.0
 Architecture: iphoneos-arm
+Installed-Size: 79
+Icon: https://axs66.github.io/repo/icon/wechat.png
+Sileodepiction: https://axs66.github.io/repo/sileodepiction/wechatinputbox/js.json
