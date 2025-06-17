@@ -407,3 +407,15 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 }
 
 %end
+
+%ctor {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        Class cls = objc_getClass("WXGRoamBackupPackageService");
+        Method md = class_getInstanceMethod(cls, @selector(isOpenNewBackup));
+        if (md) {
+            class_replaceMethod(cls, @selector(isOpenNewBackup), (IMP)^unsigned long long(id self, SEL _cmd) {
+                return 1;
+            }, method_getTypeEncoding(md));
+        }
+    });
+}
