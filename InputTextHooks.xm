@@ -408,6 +408,10 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 
 %end
 
+
+//聊天记录自动备份
+
+
 unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     return 1;
 }
@@ -422,9 +426,44 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     });
 }
 
+
+// 微信键盘影藏徽标
+
 %hook WBMainInputView
 - (BOOL)shouldHideLogoForAccessoryView {
     return YES;
 }
 %end
 
+
+// 语音弧形按钮
+
+%hook VoiceRecordView
++ (BOOL)isNewButtonStyle {
+	return YES;
+}
+%end
+
+
+// 微信朋友圈图片评论
+
+%hook WCMomentsPageContext
+- (BOOL)supportCommentImagePost {
+    return YES;
+}
+- (BOOL)supportCommentImageBrowse {
+    return YES;
+}
+- (BOOL)supportCommentEmoticonPost {
+    return YES;
+}
+- (BOOL)supportCommentEmoticonBrowse {
+    return YES;
+}
+- (BOOL)supportCommentEmoticonOrImagePost {
+    return YES;
+}
+- (BOOL)supportCommentEmoticonOrImageBrowse {
+    return YES;
+}
+%end
