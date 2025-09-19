@@ -409,8 +409,34 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 %end
 
 
-//聊天记录自动备份
+// 微信键盘隐藏Logo
 
+%hook WBMainInputView
+- (BOOL)shouldHideLogoForAccessoryView {
+    return YES;
+}
+%end
+
+
+// 微信 SVG 图片颜色修改
+/* 默认示范随机颜色*/ 
+UIColor *randomColor(void) {
+    CGFloat red = arc4random_uniform(256) / 255.0;
+    CGFloat green = arc4random_uniform(256) / 255.0;
+    CGFloat blue = arc4random_uniform(256) / 255.0;
+    CGFloat alpha = (arc4random_uniform(31) + 70) / 100.0;
+    return [UIColor colorWithRed:red green:green blue:blue alpha:alpha];
+}
+
+%hook MMThemeManager
+- (UIImage *)svgImageNamed:(NSString *)name size:(struct CGSize)size color:(id)color alpha:(double)alpha angle:(int)angle ignoreNotFound:(BOOL)ignore {
+    /* 当然 在这里你可以判断指定修改的SVG图片名称 */
+	return %orig(name, size, randomColor(), alpha, angle, ignore);
+}
+%end
+
+
+// 聊天记录自动备份，仅限8.0.50+版本
 
 unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     return 1;
@@ -427,16 +453,18 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 }
 
 
-// 微信键盘影藏徽标
+// 微信启用AB测试的miniApp悬浮窗功能，仅限8.0.54+版本
 
-%hook WBMainInputView
-- (BOOL)shouldHideLogoForAccessoryView {
-    return YES;
+#import <UIKit/UIKit.h>
+
+%hook AffStarManager
+- (BOOL)isOpenStarSwitch {
+	return YES;
 }
 %end
 
 
-// 语音弧形按钮
+// 语音弧形按钮，仅限8.0.60+版本
 
 %hook VoiceRecordView
 + (BOOL)isNewButtonStyle {
@@ -445,7 +473,26 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 %end
 
 
-// 微信朋友圈图片评论
+// 微信启用AB测试单聊框功能，仅限8.0.55+版本
+
+%hook ChatBoxConfigurationMgr
+- (BOOL)isSingleChatBoxEnable {
+	return YES;
+}
+%end
+
+
+// 微信启用聊天发送实时照片，仅限8.0.57+版本
+
+#import <UIKit/UIKit.h>
+
+%hook ImageMessageUtils
++ (BOOL)isOpenLiveMsgUpload {
+    return YES;
+}
+%end
+
+// 微信朋友圈图片评论，仅限8.0.60+版本
 
 %hook WCMomentsPageContext
 - (BOOL)supportCommentImagePost {
@@ -467,3 +514,15 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     return YES;
 }
 %end
+
+
+// 微信启用删除联系人保留聊天记录，仅限8.0.62+版本
+
+#import <UIKit/UIKit.h>
+
+%hook ContactUtils
++ (BOOL)getDeleteContactKeepChatHistoryOpenSwitch {
+	return YES;
+}
+%end
+
