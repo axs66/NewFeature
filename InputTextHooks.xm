@@ -411,8 +411,6 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 
 // WCIsOverSeaUser微信通行密钥
 
-#import <UIKit/UIKit.h>
-
 %hook SettingUtil
 + (BOOL)isOverSeaUser {
 	return YES;
@@ -421,8 +419,6 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 
 
 // WCNewMiniAppFloatingWindow微信启用AB测试的miniApp悬浮窗功能，仅限8.0.54+版本
-
-#import <UIKit/UIKit.h>
 
 %hook AffStarManager
 - (BOOL)isOpenStarSwitch {
@@ -519,8 +515,6 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 
 // WCABTestC2CLivePhoto微信启用聊天发送实时照片，仅限8.0.57+版本
 
-#import <UIKit/UIKit.h>
-
 %hook ImageMessageUtils
 + (BOOL)isOpenLiveMsgUpload {
     return YES;
@@ -529,8 +523,6 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 
 
 // WCABTestDeleteUserKeepHistory微信启用删除联系人保留聊天记录，仅限8.0.62+版本
-
-#import <UIKit/UIKit.h>
 
 %hook ContactUtils
 + (BOOL)getDeleteContactKeepChatHistoryOpenSwitch {
