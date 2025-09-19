@@ -6,8 +6,8 @@
 #import <Foundation/Foundation.h>
 #import "WCPluginsHeader.h"
 
-static NSString *wbzybt = @"输入框•Axs";
-static NSString *wbzybb = @"1.0";
+static NSString *wbzybt = @"NewFeature";
+static NSString *wbzybb = @"5.2.0";
 
 // UserDefaults Key常量
 static NSString * const kInputTextEnabledKey = @"com.wechat.enhance.inputText.enabled";
