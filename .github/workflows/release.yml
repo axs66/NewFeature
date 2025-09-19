@@ -35,12 +35,12 @@ jobs:
         id: release
         run: |
           VERSION=$(date +v%Y%m%d%H%M)
-          gh release create $VERSION ${{ github.workspace }}/packages/*.deb --title "微信输入框自定义 $VERSION" --notes "Automated release of .deb files"
+          gh release create $VERSION ${{ github.workspace }}/packages/*.deb --title "微信新功能 $VERSION" --notes "Automated release of .deb files"
         env:
           GH_TOKEN: ${{ secrets.PAT }}  # 这里设置了 GitHub Token 用于授权
 
       - name: Upload specific Deb packages
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: 微信输入框自定义
+          name: 微信新功能
           path: ${{ github.workspace }}/packages/*.deb
