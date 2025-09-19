@@ -36,7 +36,7 @@
 
 %new
 - (void)setupTail {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"设置尾巴" message:@"🤩学习交流\nhttps://github.com/Netskao/WCTimeLineMessageTail" preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"设置尾巴" message:@"罗天星域-许木" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
     textField.placeholder = @"设置任何你所想的文本";
     textField.text = [NSUserDefaults.standardUserDefaults stringForKey:@"WCTimeLineMessageTail"];
