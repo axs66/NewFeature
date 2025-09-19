@@ -409,16 +409,29 @@ static void applyPlaceHolderSettings(MMGrowTextView *textView) {
 %end
 
 
-// 微信键盘隐藏Logo
+// WCIsOverSeaUser微信通行密钥
 
-%hook WBMainInputView
-- (BOOL)shouldHideLogoForAccessoryView {
-    return YES;
+#import <UIKit/UIKit.h>
+
+%hook SettingUtil
++ (BOOL)isOverSeaUser {
+	return YES;
 }
 %end
 
 
-// 微信 SVG 图片颜色修改
+// WCNewMiniAppFloatingWindow微信启用AB测试的miniApp悬浮窗功能，仅限8.0.54+版本
+
+#import <UIKit/UIKit.h>
+
+%hook AffStarManager
+- (BOOL)isOpenStarSwitch {
+	return YES;
+}
+%end
+
+
+// WCSVGColorHookExamples微信SVG图片颜色修改
 /* 默认示范随机颜色*/ 
 UIColor *randomColor(void) {
     CGFloat red = arc4random_uniform(256) / 255.0;
@@ -436,7 +449,34 @@ UIColor *randomColor(void) {
 %end
 
 
-// 聊天记录自动备份，仅限8.0.50+版本
+// WCKeyboardHideLogo微信键盘隐藏Logo
+
+%hook WBMainInputView
+- (BOOL)shouldHideLogoForAccessoryView {
+    return YES;
+}
+%end
+
+
+// WCABTestSingleChatBox微信启用AB测试单聊框功能，仅限8.0.55+版本
+
+%hook ChatBoxConfigurationMgr
+- (BOOL)isSingleChatBoxEnable {
+	return YES;
+}
+%end
+
+
+// WCABTestVoiceRecordView语音弧形按钮，仅限8.0.60+版本
+
+%hook VoiceRecordView
++ (BOOL)isNewButtonStyle {
+	return YES;
+}
+%end
+
+
+// WCABTestLocalBackup聊天记录自动备份，仅限8.0.50+版本
 
 unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     return 1;
@@ -453,46 +493,7 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 }
 
 
-// 微信启用AB测试的miniApp悬浮窗功能，仅限8.0.54+版本
-
-#import <UIKit/UIKit.h>
-
-%hook AffStarManager
-- (BOOL)isOpenStarSwitch {
-	return YES;
-}
-%end
-
-
-// 语音弧形按钮，仅限8.0.60+版本
-
-%hook VoiceRecordView
-+ (BOOL)isNewButtonStyle {
-	return YES;
-}
-%end
-
-
-// 微信启用AB测试单聊框功能，仅限8.0.55+版本
-
-%hook ChatBoxConfigurationMgr
-- (BOOL)isSingleChatBoxEnable {
-	return YES;
-}
-%end
-
-
-// 微信启用聊天发送实时照片，仅限8.0.57+版本
-
-#import <UIKit/UIKit.h>
-
-%hook ImageMessageUtils
-+ (BOOL)isOpenLiveMsgUpload {
-    return YES;
-}
-%end
-
-// 微信朋友圈图片评论，仅限8.0.60+版本
+// WCABTestTimeLineEmoticonOrImage微信朋友圈图片评论，仅限8.0.60+版本
 
 %hook WCMomentsPageContext
 - (BOOL)supportCommentImagePost {
@@ -516,7 +517,18 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
 %end
 
 
-// 微信启用删除联系人保留聊天记录，仅限8.0.62+版本
+// WCABTestC2CLivePhoto微信启用聊天发送实时照片，仅限8.0.57+版本
+
+#import <UIKit/UIKit.h>
+
+%hook ImageMessageUtils
++ (BOOL)isOpenLiveMsgUpload {
+    return YES;
+}
+%end
+
+
+// WCABTestDeleteUserKeepHistory微信启用删除联系人保留聊天记录，仅限8.0.62+版本
 
 #import <UIKit/UIKit.h>
 
