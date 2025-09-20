@@ -561,3 +561,201 @@ unsigned long long hook_isOpenNewBackup(id self, SEL _cmd) {
     return 0;
 }
 %end
+
+
+// WCEnableDictation微信输入框语音转述功能，仅限8.0.61+版本
+
+%hook MMGrowTextViewExtConfig
+
+- (BOOL)enableDictation {
+    return YES;
+}
+
+- (void)setEnableDictation:(BOOL)arg1 {
+    %orig(YES);
+}
+
+%end
+
+%ctor {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        %init;
+    });
+}
+
+
+// WCFullSwipe微信添加全局屏幕中间返回功能
+
+@interface MMUIViewController : UIViewController
+@property (nonatomic, readonly) UINavigationController *navigationController;
+@end
+
+%hook MMUIViewController
+
+- (void)viewDidLoad {
+    %orig;
+
+    UIGestureRecognizer *edgeGesture = self.navigationController.interactivePopGestureRecognizer;
+    edgeGesture.enabled = YES;
+
+    NSArray *targets = [edgeGesture valueForKey:@"_targets"];
+    id targetObj = [targets.firstObject valueForKey:@"target"];
+    SEL action = NSSelectorFromString(@"handleNavigationTransition:");
+
+    UIPanGestureRecognizer *fullScreenPan = [[UIPanGestureRecognizer alloc] initWithTarget:targetObj action:action];
+    fullScreenPan.delegate = (id<UIGestureRecognizerDelegate>)self;
+    
+    fullScreenPan.maximumNumberOfTouches = 1;
+    
+    fullScreenPan.cancelsTouchesInView = NO;
+    
+    [self.view addGestureRecognizer:fullScreenPan];
+}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+
+    if ([gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]] && 
+        gestureRecognizer != self.navigationController.interactivePopGestureRecognizer) {
+        UIPanGestureRecognizer *panGesture = (UIPanGestureRecognizer *)gestureRecognizer;
+        
+        CGPoint location = [panGesture locationInView:self.view];
+        CGFloat screenWidth = self.view.bounds.size.width;
+        
+        BOOL isInMiddleArea = location.x > screenWidth/3 && location.x < screenWidth*2/3;
+        
+        CGPoint translation = [panGesture translationInView:self.view];
+        BOOL isHorizontalSwipe = fabs(translation.x) > fabs(translation.y);
+        BOOL isRightSwipe = translation.x > 0;
+        
+        return isInMiddleArea && isHorizontalSwipe && isRightSwipe;
+    }
+    
+    return %orig;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+
+    if (gestureRecognizer != self.navigationController.interactivePopGestureRecognizer && 
+        [gestureRecognizer isKindOfClass:[UIPanGestureRecognizer class]]) {
+        
+        if (otherGestureRecognizer == self.navigationController.interactivePopGestureRecognizer) {
+            return NO;
+        }
+        
+        return NO;
+    }
+    
+    return NO;
+}
+
+%end
+
+
+// WCEnhance重命名【我】页面、添加图片点击关闭手势、移除加好友页面我的二维码大图
+@interface WCTableViewCellLeftConfig : NSObject
+@property(copy, nonatomic) NSString *title; // @synthesize title=_title;
+@end
+
+@interface WCC2CImageScrollView : UIView
+- (void)handleTapGesture:(UITapGestureRecognizer *)gesture;
+@end
+
+@interface CExtendInfoOfImg : NSObject
+- (void)setImage:(id)arg1 withData:(id)arg2 isLongOriginImage:(_Bool)arg3;
+- (void)setImage:(id)arg1 withData:(id)arg2 isOriginImage:(BOOL)arg3;
+@end
+
+%hook WCTableViewCellLeftConfig
+
+- (NSString *)title {
+	NSString *r = %orig;
+	
+	if (r == nil) {
+		return nil;
+	}
+	if ([r isEqualToString:@"订单与卡包"]) {
+		return @"卡包";
+	}
+	if ([r isEqualToString:@"支付与服务"]) {
+		return @"服务";
+	}
+	
+	return r;
+}
+
+%end
+
+%hook UIButton
+
+- (void)setAccessibilityLabel:(NSString *)accessibilityLabel {
+	%orig;
+
+	if ([accessibilityLabel isEqualToString:@"我的⼆维码"]) {
+
+		self.hidden = YES;
+	}
+}
+
+%end
+
+%hook WCC2CImageScrollView
+
+- (void)layoutSubviews {
+	%orig;
+	
+	NSBundle *bundle = [NSBundle mainBundle];
+	NSString *version = [bundle objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+	
+	if ([version compare:@"8.0.55" options:NSNumericSearch] != NSOrderedAscending) {
+		BOOL hasGesture = NO;
+		for (UIGestureRecognizer *gesture in self.gestureRecognizers) {
+			if ([gesture isKindOfClass:[UITapGestureRecognizer class]]) {
+				hasGesture = YES;
+				break;
+			}
+		}
+		
+		if (!hasGesture) {
+			UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+			[self addGestureRecognizer:tap];
+		}
+	}
+	
+	NSArray *subviews = [self.subviews copy];
+	for (UIView *subview in subviews) {
+		if ([subview class] == [UIView class]) {
+			[subview removeFromSuperview];
+		}
+	}
+}
+
+%new
+- (void)handleTapGesture:(UITapGestureRecognizer *)gesture {
+	CGPoint location = [gesture locationInView:self];
+	CGFloat width = self.bounds.size.width;
+	CGFloat edgeWidth = width * 0.2;
+	
+	if (location.x <= edgeWidth || location.x >= (width - edgeWidth)) {
+		SEL closeSelector = NSSelectorFromString(@"onCloseBtnClick:");
+		if ([self respondsToSelector:closeSelector]) {
+			[self performSelector:closeSelector withObject:nil];
+		}
+	}
+}
+
+%end
+
+%hook CExtendInfoOfImg
+%new
+- (void)setImage:(id)arg1 withData:(id)arg2 isLongOriginImage:(BOOL)arg3 {
+	[self setImage:arg1 withData:arg2 isOriginImage:arg3];
+}
+%end
+
+
+// WCEnableCleanOrigMsg原图、原视频14天后自动清理，仅限8.0.54+版本
+%hook HDImageExpireUtils
++ (_Bool)isExptCleanOriginMsgOpened{
+    return YES;
+}
+%end
