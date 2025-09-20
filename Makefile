@@ -1,7 +1,7 @@
 export TARGET = iphone:clang:latest
 export ARCHS = arm64 arm64e
 export FINALPACKAGE = 0
-DEBUG = 1
+// DEBUG = 1  调试构建模式  即+debug
 
 include $(THEOS)/makefiles/common.mk
 
